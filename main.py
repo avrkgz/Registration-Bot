@@ -3,7 +3,7 @@ import logging
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
-# from aiogram.utils.emoji import emojize
+from aiogram.utils.emoji import emojize
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import Contact, Location
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -25,12 +25,13 @@ Data.create_db(database)
 
 @dp.message_handler(commands=['start'])
 async def hello(msg: types.Message):
-    if msg.from_user.id == Admin:
-        await bot.send_message(msg.from_user.id, 'Здравствуй создатель!')
+    if msg.from_user.id == admin:
+        await bot.send_message(msg.from_user.id, 'Здравствуй создатель!', reply_markup=admin_btns)
         await Form.admin_step.set()
     else:
         await bot.send_message(msg.from_user.id, f"Hello {msg.from_user.first_name}!", reply_markup=start_btn)
         await Form.starting.set()
+        print(msg)
 
 
 @dp.callback_query_handler(text='starting', state=Form.starting)
@@ -73,7 +74,14 @@ async def second_step_func(msg: types.Message, state: FSMContext):
     await Form.starting.set()
 
 
-
-
+@dp.callback_query_handler(text='read_db', state=Form.admin_step)
+async def admin_func(query: types.CallbackQuery, state: FSMContext):
+    if query.data == 'read_db':
+        for i in range(len(database.get_users())):
+            msg = f"id = {database.get_users()[i][0]}\n" \
+                  f"name = {database.get_users()[i][1]}\n" \
+                  f"phone = {database.get_users()[i][2]}"
+            await bot.send_message(admin, msg)
+            time.sleep(1)
 
 executor.start_polling(dp, skip_updates=True)
